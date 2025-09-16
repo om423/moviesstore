@@ -1,6 +1,8 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from .models import Movie, Review
 from django.contrib.auth.decorators import login_required
+from django.core.paginator import Paginator
+from django.db.models.functions import Length
 
 def index(request):
     search_term = request.GET.get('search')
@@ -60,3 +62,35 @@ def delete_review(request, id, review_id):
         user=request.user)
     review.delete()
     return redirect('movies.show', id=id)
+
+def top_reviews(request):
+    """
+    Shows 'top' comments across all movies with their authors.
+    Sorting:
+      - default (?sort=recent): most recent first
+      - ?sort=longest: longest comments first (ties by most recent)
+    Pagination: 10 per page. Optional ?page=2
+    Optional cap: ?limit=50 (useful if TA wants just 'top N')
+    """
+    sort = request.GET.get('sort', 'recent')  # 'recent' | 'longest'
+    qs = Review.objects.select_related('user', 'movie')
+
+    if sort == 'longest':
+        qs = qs.annotate(comment_len=Length('comment')).order_by('-comment_len', '-date')
+    else:
+        qs = qs.order_by('-date')
+
+    # Optional limit
+    limit = request.GET.get('limit')
+    if limit and limit.isdigit():
+        qs = qs[:int(limit)]
+
+    paginator = Paginator(qs, 10)
+    page_obj = paginator.get_page(request.GET.get('page'))
+
+    template_data = {
+        'title': 'Top Reviews',
+        'page_obj': page_obj,
+        'sort': sort,
+    }
+    return render(request, 'movies/top_reviews.html', {'template_data': template_data})

@@ -24,6 +24,7 @@
           <div class="navbar-nav ms-auto navbar-ml">
             <a class="nav-link" href="{% url 'home.about' %}">About</a>
             <a class="nav-link" href="{% url 'movies.index' %}">Movies</a>
+            <a class="nav-link" href="{% url 'movies.top_reviews' %}">Top Reviews</a>
             <a class="nav-link" href="{% url 'cart.index' %}">Cart</a>
             <div class="vr bg-white mx-2 d-none d-lg-block"></div>
             {% if user.is_authenticated %}
@@ -90,9 +91,7 @@
         <div class="me-5 text-white">
           <span>DESIGNED BY
             <a href="https://www.x.com/danielgarax"
-            target="_blank">DANIEL CORREA</a> &
-            <a href="https://www.x.com/greglim81"
-            target="_blank">GREG LIM</a>
+            target="_blank">Om Patel</a>
           </span>
         </div>
         <div class="text-white">

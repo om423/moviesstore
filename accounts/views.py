@@ -29,7 +29,6 @@ def login(request):
         else:
             auth_login(request, user)
             return redirect('home.index')
-
 def signup(request):
     template_data = {}
     template_data['title'] = 'Sign Up'
