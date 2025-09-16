@@ -6,11 +6,56 @@
       <div class="col mx-auto mb-3">
         <h2>Purchase Completed</h2>
         <hr />
-        <p>Congratulations, purchase completed. Order
-          number is: <b>#{{ template_data.order_id }}</b>
+        <p>
+          Congratulations, purchase completed. Order number is:
+          <b>#{{ template_data.order_id }}</b>
         </p>
+        <p class="text-muted">We’d love your quick feedback about checkout.</p>
       </div>
     </div>
   </div>
 </div>
+
+<!-- NEW: Bootstrap modal (survey is optional) -->
+<div class="modal fade" id="feedbackModal" tabindex="-1" aria-labelledby="feedbackLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <form method="POST" action="{% url 'cart.create_feedback' %}">
+        {% csrf_token %}
+        <div class="modal-header">
+          <h5 class="modal-title" id="feedbackLabel">How was the checkout process?</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <div class="mb-3">
+            <label class="form-label">Your name (optional)</label>
+            <input type="text" name="name" class="form-control" placeholder="Leave blank to remain anonymous" />
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Short statement</label>
+            <input type="text" name="comment" maxlength="255" class="form-control"
+                   placeholder="Tell us briefly how checkout felt" />
+            <div class="form-text">You can also cancel to skip this.</div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <!-- Cancel = skip survey -->
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+          <!-- Submit only if they filled something; server will ignore empty -->
+          <button type="submit" class="btn bg-dark text-white">Submit</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Auto-open the modal after the purchase page loads -->
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    if (window.bootstrap && document.getElementById('feedbackModal')) {
+      var m = new bootstrap.Modal(document.getElementById('feedbackModal'));
+      m.show();
+    }
+  });
+</script>
 {% endblock content %}

@@ -22,3 +22,14 @@ class Item(models.Model):
         on_delete=models.CASCADE)
     def __str__(self):
         return str(self.id) + ' - ' + self.movie.name
+
+# NEW: optional, short post-checkout survey
+class CheckoutFeedback(models.Model):
+    id = models.AutoField(primary_key=True)
+    name = models.CharField(max_length=100, blank=True)
+    comment = models.CharField(max_length=255)
+    date = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        label = self.name if self.name else "Anonymous"
+        return f"{self.id} - {label}"
