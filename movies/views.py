@@ -3,6 +3,7 @@ from .models import MoviePopularity, Movie, Review, GeographicRegion
 from django.contrib.auth.decorators import login_required
 from django.db.models import Sum, Count
 from django.http import JsonResponse
+import json
 
 def index(request):
     search_term = request.GET.get('search')
@@ -79,8 +80,20 @@ def delete_review(request, id, review_id):
 def local_popularity_map(request):
     template_data = {}
     template_data['title'] = 'Local Popularity Map'
-    region = GeographicRegion.objects.all()
-    template_data['regions'] = region
+    regions = GeographicRegion.objects.all()
+    
+    # Serialize regions data for JavaScript
+    regions_data = []
+    for region in regions:
+        regions_data.append({
+            'id': region.id,
+            'name': region.name,
+            'description': region.description,
+            'lattitude': float(region.lattitude),
+            'longitude': float(region.longitude)
+        })
+    
+    template_data['regions'] = regions_data
     return render(request, 'movies/local_popularity_map.html', {'template_data': template_data})
 
 def get_region_popularity(request, region_id):
