@@ -7,31 +7,93 @@
       <div class="col-md-6 mx-auto mb-3">
         <h2>{{ template_data.movie.name }}</h2>
         <hr />
+
+        <div class="mb-3">
+          <div class="d-flex align-items-center">
+            <h5 class="me-3 mb-0">Rating:</h5>
+            {% if template_data.average_rating %}
+            <div class="rating-display">
+              {% for i in "12345" %}
+              {% if forloop.counter <= template_data.average_rating %} <i class="fas fa-star text-warning"></i>
+                {% elif forloop.counter <= template_data.average_rating|add:"0.5" %} <i
+                  class="fas fa-star-half-alt text-warning"></i>
+                  {% else %}
+                  <i class="far fa-star text-warning"></i>
+                  {% endif %}
+                  {% endfor %}
+                  <span class="ms-2"><strong>{{ template_data.average_rating }}</strong> / 5</span>
+                  <span class="text-muted ms-2">({{ template_data.rating_count }} rating{{ template_data.rating_count|pluralize }})</span>
+            </div>
+            {% else %}
+            <span class="text-muted">No ratings yet</span>
+            {% endif %}
+          </div>
+        </div>
+
+        {% if user.is_authenticated %}
+        <div class="card mb-3 shadow-sm">
+          <div class="card-body">
+            <h6 class="card-title">
+              {% if template_data.user_rating %}
+              Your Rating:
+              {% for i in "12345" %}
+              {% if forloop.counter <= template_data.user_rating.stars %} <i class="fas fa-star text-warning"></i>
+                {% else %}
+                <i class="far fa-star text-warning"></i>
+                {% endif %}
+                {% endfor %}
+                ({{ template_data.user_rating.stars }} stars)
+                {% else %}
+                Rate this movie
+                {% endif %}
+            </h6>
+            <form method="POST" action="{% url 'movies.submit_rating' id=template_data.movie.id %}" class="rating-form">
+              {% csrf_token %}
+              <div class="star-rating">
+                {% for i in "12345" %}
+                <button type="submit" name="stars" value="{{ forloop.counter }}"
+                  class="btn btn-link p-0 star-btn {% if template_data.user_rating and forloop.counter <= template_data.user_rating.stars %}active{% endif %}"
+                  title="{{ forloop.counter }} star{{ forloop.counter|pluralize }}">
+                  <i class="far fa-star star-icon" data-rating="{{ forloop.counter }}"></i>
+                </button>
+                {% endfor %}
+              </div>
+              <small class="text-muted">Click a star to rate (1-5)</small>
+            </form>
+          </div>
+        </div>
+        {% else %}
+        <div class="alert alert-info">
+          <a href="{% url 'accounts.login' %}">Log in</a> to rate this movie
+        </div>
+        {% endif %}
+
+        <hr />
+
+
+
         <p><b>Description:</b> {{ template_data.movie.description }}</p>
         <p>
           <b>Price:</b> ${{ template_data.movie.price }}
         </p>
         <p class="card-text">
-          <form method="post"
-            action="{% url 'cart.add' id=template_data.movie.id %}">
-            <div class="row">
-              {% csrf_token %}
-              <div class="col-auto">
-                <div class="input-group col-auto">
-                  <div class="input-group-text">Quantity
-                    </div>
-                  <input type="number" min="1" max="10"
-                    class="form-control quantity-input"
-                    name="quantity" value="1">
+        <form method="post" action="{% url 'cart.add' id=template_data.movie.id %}">
+          <div class="row">
+            {% csrf_token %}
+            <div class="col-auto">
+              <div class="input-group col-auto">
+                <div class="input-group-text">Quantity
                 </div>
-              </div>
-              <div class="col-auto">
-                <button class="btn bg-dark text-white"
-                  type="submit">Add to cart</button>
+                <input type="number" min="1" max="10" class="form-control quantity-input" name="quantity" value="1">
               </div>
             </div>
-          </form>
-        </p>        <ul class="list-group">
+            <div class="col-auto">
+              <button class="btn bg-dark text-white" type="submit">Add to cart</button>
+            </div>
+          </div>
+        </form>
+        </p>
+        <ul class="list-group">
           {% for review in template_data.reviews %}
           <li class="list-group-item pb-3 pt-3">
             <h5 class="card-title">
@@ -45,8 +107,7 @@
             <a class="btn btn-primary"
               href="{% url 'movies.edit_review' id=template_data.movie.id review_id=review.id %}">Edit
             </a>
-            <a class="btn btn-danger"
-              href="{% url 'movies.delete_review'
+            <a class="btn btn-danger" href="{% url 'movies.delete_review'
               id=template_data.movie.id
               review_id=review.id %}">Delete
             </a>
