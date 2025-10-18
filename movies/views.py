@@ -1,6 +1,8 @@
 from django.shortcuts import render, redirect, get_object_or_404
-from .models import Movie, Review
+from .models import MoviePopularity, Movie, Review, GeographicRegion
 from django.contrib.auth.decorators import login_required
+from django.db.models import Sum, Count
+from django.http import JsonResponse
 
 def index(request):
     search_term = request.GET.get('search')
@@ -16,6 +18,19 @@ def index(request):
 def show(request, id):
     movie = Movie.objects.get(id=id)
     reviews = Review.objects.filter(movie=movie)
+
+    default_region = GeographicRegion.objects.filter(name='North America').first()
+    if not default_region:
+        default_region = GeographicRegion.objects.first()
+
+    if default_region:
+        popularity, created = MoviePopularity.objects.get_or_create(
+            movie=movie,
+            geographic_region=default_region,
+            defaults={'purchase_count': 0, 'view_count': 0})
+        popularity.view_count += 1
+        popularity.save()
+
     template_data = {}
     template_data['title'] = movie.name
     template_data['movie'] = movie
@@ -60,3 +75,38 @@ def delete_review(request, id, review_id):
         user=request.user)
     review.delete()
     return redirect('movies.show', id=id)
+
+def local_popularity_map(request):
+    template_data = {}
+    template_data['title'] = 'Local Popularity Map'
+    region = GeographicRegion.objects.all()
+    template_data['regions'] = region
+    return render(request, 'movies/local_popularity_map.html', {'template_data': template_data})
+
+def get_region_popularity(request, region_id):
+    try:
+        region = get_object_or_404(GeographicRegion, id=region_id)
+        popularities = MoviePopularity.objects.filter(geographic_region=region).order_by(
+            '-purchase_count', '-view_count')[:10]
+        data = {
+            "region_name": region.name,
+            "movies": []
+        }
+        for popularity in popularities:
+            movie_data = {
+                "id": popularity.movie.id,
+                "name": popularity.movie.name,
+                "purchase_count": popularity.purchase_count,
+                "view_count": popularity.view_count,
+                "total_activity": popularity.purchase_count + popularity.view_count,
+                "image_url": popularity.movie.image_url if popularity.movie.image else None
+            }
+
+            data["movies"].append(movie_data)
+
+        return JsonResponse(data)
+        
+    except Exception as e:
+        return JsonResponse({
+            "error": str(e)
+        }, status=500)
