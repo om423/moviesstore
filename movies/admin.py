@@ -12,7 +12,7 @@ class GeographicRegionAdmin(admin.ModelAdmin):
 class MoviePopularityAdmin(admin.ModelAdmin):
     list_display = ['movie', 'geographic_region', 'purchase_count', 'view_count', 'last_update']
     list_filter = ['geographic_region', 'last_update']
-    search_fields = ['movie__name', 'region__name']
+    search_fields = ['movie__name', 'geographic_region__name']
 
 admin.site.register(Movie, MovieAdmin)
 admin.site.register(Review)

@@ -47,7 +47,7 @@ def purchase(request):
 	order.total = cart_total
 	order.save()
 
-	defualt_region = GeographicRegion.objects.filter(name='North America').first()
+	default_region = GeographicRegion.objects.filter(name='North America').first()
 
 	if not default_region:
 		default_region = GeographicRegion.objects.first()

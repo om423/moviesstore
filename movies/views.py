@@ -99,7 +99,7 @@ def get_region_popularity(request, region_id):
                 "purchase_count": popularity.purchase_count,
                 "view_count": popularity.view_count,
                 "total_activity": popularity.purchase_count + popularity.view_count,
-                "image_url": popularity.movie.image_url if popularity.movie.image else None
+                "image_url": popularity.movie.image.url if popularity.movie.image else None
             }
 
             data["movies"].append(movie_data)
