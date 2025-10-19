@@ -1,0 +1,158 @@
+{% extends 'base.html' %}
+{% block content %}
+{% load static %}
+
+<div class="p-3">
+  <div class="container">
+    <div class="row mt-3">
+      <div class="col mx-auto mb-3">
+        <h2>Local Popularity Map</h2>
+        <hr />
+        <p class="card-text">
+          Discover what movies are trending in different geographic regions around the world. 
+          Click on a region marker to see the most popular movies in that area.
+        </p>
+      </div>
+    </div>
+    
+    <!-- Map Container -->
+    <div class="row">
+      <div class="col-12">
+        <div class="card">
+          <div class="card-body">
+            <div id="map" style="height: 500px; width: 100%;"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Region Details Panel -->
+    <div class="row mt-4" id="region-details" style="display: none;">
+      <div class="col-12">
+        <div class="card">
+          <div class="card-header">
+            <h4 id="region-title">Region Details</h4>
+          </div>
+          <div class="card-body">
+            <div id="trending-movies">
+              <!-- Trending movies will be loaded here -->
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Leaflet CSS and JS -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+{{ template_data.regions|json_script:"region-data" }}
+
+<script>
+// Pass region data from Django template to JavaScript
+var regionData = JSON.parse(document.getElementById('region-data').textContent);
+
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('Region data loaded:', regionData);
+    
+    // Initialize the map centered on the world
+    var map = L.map('map').setView([20, 0], 2);
+    
+    // Add OpenStreetMap tiles
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '© OpenStreetMap contributors'
+    }).addTo(map);
+    
+    // Add markers for each region
+    var markers = [];
+    regionData.forEach(function(region) {
+        var marker = L.marker([region.lattitude, region.longitude])
+            .addTo(map)
+            .bindPopup('<b>' + region.name + '</b><br>' + region.description)
+            .on('click', function() {
+                loadRegionPopularity(region.id, region.name);
+            });
+        markers.push(marker);
+    });
+    
+    // Function to load region popularity data
+    function loadRegionPopularity(regionId, regionName) {
+        // Show loading state
+        document.getElementById('region-details').style.display = 'block';
+        document.getElementById('region-title').textContent = 'Trending Movies in ' + regionName;
+        document.getElementById('trending-movies').innerHTML = '<div class="text-center"><div class="spinner-border" role="status"><span class="visually-hidden">Loading...</span></div></div>';
+        
+        // Fetch data from API
+        fetch('/movies/api/region/' + regionId + '/popularity/')
+            .then(response => response.json())
+            .then(data => {
+                if (data.error) {
+                    document.getElementById('trending-movies').innerHTML = 
+                        '<div class="alert alert-danger">Error loading data: ' + data.error + '</div>';
+                    return;
+                }
+                
+                // Display trending movies
+                var html = '<div class="row">';
+                if (data.movies.length === 0) {
+                    html += '<div class="col-12"><div class="alert alert-info">No trending movies data available for this region.</div></div>';
+                } else {
+                    data.movies.forEach(function(movie) {
+                        html += '<div class="col-md-6 col-lg-4 mb-3">';
+                        html += '<div class="card h-100">';
+                        if (movie.image_url) {
+                            html += '<img src="' + movie.image_url + '" class="card-img-top" style="height: 200px; object-fit: cover;">';
+                        }
+                        html += '<div class="card-body">';
+                        html += '<h5 class="card-title">' + movie.name + '</h5>';
+                        html += '<p class="card-text">';
+                        html += '<small class="text-muted">Purchases: ' + movie.purchase_count + '</small><br>';
+                        html += '<small class="text-muted">Views: ' + movie.view_count + '</small><br>';
+                        html += '<strong>Total Activity: ' + movie.total_activity + '</strong>';
+                        html += '</p>';
+                        html += '<a href="/movies/' + movie.id + '/" class="btn btn-primary btn-sm">View Details</a>';
+                        html += '</div></div></div>';
+                    });
+                }
+                html += '</div>';
+                document.getElementById('trending-movies').innerHTML = html;
+            })
+            .catch(error => {
+                document.getElementById('trending-movies').innerHTML = 
+                    '<div class="alert alert-danger">Error loading data: ' + error.message + '</div>';
+            });
+    }
+    
+    // Fit map to show all markers
+    if (markers.length > 0) {
+        var group = new L.featureGroup(markers);
+        map.fitBounds(group.getBounds().pad(0.1));
+    }
+});
+</script>
+
+<style>
+.card-img-top {
+    transition: transform 0.3s ease;
+}
+
+.card-img-top:hover {
+    transform: scale(1.05);
+}
+
+#map {
+    border-radius: 8px;
+}
+
+.leaflet-popup-content {
+    text-align: center;
+}
+
+.leaflet-popup-content b {
+    color: #333;
+}
+</style>
+
+{% endblock content %}

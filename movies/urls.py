@@ -9,5 +9,7 @@ urlpatterns = [
         views.edit_review, name='movies.edit_review'),
     path('<int:id>/review/<int:review_id>/delete/',
         views.delete_review, name='movies.delete_review'),
+    path('local-popularity-map/', views.local_popularity_map, name='movies.local_popularity_map'),
+    path("api/region/<int:region_id>/popularity/", views.get_region_popularity, name='movies.get_region_popularity'),
 ]
 

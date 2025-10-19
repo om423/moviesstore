@@ -1,6 +1,6 @@
 from django.shortcuts import render
 from django.shortcuts import get_object_or_404, redirect
-from movies.models import Movie
+from movies.models import Movie, GeographicRegion, MoviePopularity
 from .utils import calculate_cart_total
 from .models import Order, Item, CheckoutFeedback
 from django.contrib.auth.decorators import login_required
@@ -46,6 +46,12 @@ def purchase(request):
 	order.user = request.user
 	order.total = cart_total
 	order.save()
+
+	default_region = GeographicRegion.objects.filter(name='North America').first()
+
+	if not default_region:
+		default_region = GeographicRegion.objects.first()
+	
 	for movie in movies_in_cart:
 		item = Item()
 		item.movie = movie
@@ -53,6 +59,14 @@ def purchase(request):
 		item.order = order
 		item.quantity = cart[str(movie.id)]
 		item.save()
+
+		if default_region:
+			popularity, created = MoviePopularity.objects.get_or_create(
+				movie=movie,
+				geographic_region=default_region,
+				defaults={'purchase_count': 0, 'view_count': 0})
+			popularity.purchase_count += int(cart[str(movie.id)])
+			popularity.save()
 	request.session['cart'] = {}
 	template_data = {}
 	template_data['title'] = 'Purchase confirmation'
