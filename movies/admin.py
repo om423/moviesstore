@@ -1,9 +1,16 @@
 from django.contrib import admin
-from .models import Movie, Review, GeographicRegion, MoviePopularity
+from .models import Movie, Review, Rating, GeographicRegion, MoviePopularity
 class MovieAdmin(admin.ModelAdmin):
     ordering = ['name']
     search_fields = ['name']
 
+
+@admin.register(Rating)
+class RatingAdmin(admin.ModelAdmin):
+    list_display = ('id', 'user', 'movie', 'stars', 'date')
+    list_filter = ('stars', 'date')
+    search_fields = ('user__username', 'movie__name')
+    ordering = ('-date',)
 
 class GeographicRegionAdmin(admin.ModelAdmin):
     ordering = ['name']
